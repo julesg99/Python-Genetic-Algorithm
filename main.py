@@ -1,5 +1,5 @@
 import numpy
-
+import random
 
 class Solution:
 
@@ -15,26 +15,26 @@ class Solution:
             self.knapsack.append(temp)
             self.totalWeig += temp[1]
             self.totalUtil += temp[0]
-        print("solution = ", self.knapsack, "\nlength = ", len(self.knapsack), "\ntotal weight = ", self.totalWeig, "\ntotal utility = ", self.totalUtil, "\n")
+ #       print("solution = ", self.knapsack, "\nlength = ", len(self.knapsack), "\ntotal weight = ", self.totalWeig, "\ntotal utility = ", self.totalUtil, "\n")
 
     # constructor for creating a solution based on two parents
     # def __int__(self, parents):
     #     population = []
     #
-    # def mutation(self):
-    #     # stuff
-    #
-    # def selection(self):
-    #     # stuff
-    #
-    #     # necessary?
-    # def crossover(self):
-    #     # stuff
 
-# number of combinations
-popSize = 5
-# likelihood of a mutation happening
-muteRate = 0.0001
+    def mutation(self, muteRate):
+        # if a randomly generated value is less than the given mutation rate (0.0001) then a mutation *should* occur
+        # each element in the list has an independent chance of mutation
+        for i in range(len(self.knapsack)):
+            if numpy.random.random() < muteRate:
+                print("true")
+                self.knapsack[i][1] = round(random.uniform(0.0, 25.0), 1)
+
+
+# number of combinations (spec = 1000)
+popSize = 10
+# likelihood of a mutation happening (spec = 0.0001
+muteRate = 0.1
 
 # list of all possible items (utility, weight)
 gear = []
@@ -49,10 +49,23 @@ with open('Program2Input.txt', 'r') as file:
         count += 1
 
 
-# attempting to create a generation of 1000 combinations
+# creating a number(popSize) of combinations and putting them in generation list
 generation = list()
 for i in range(popSize):
     generation.append(Solution(gear))
+# cannot get key to reference utility value in class
+# generation.sort(key=generation[1].getUtility())
+# sort(generation.totalUtil)
 
+for i in range(popSize):
+    index = i
+    for j in range(i+1, popSize):
+        if generation[index].totalUtil > generation[j].totalUtil:
+            index = j
 
+    generation[i], generation[index] = generation[index], generation[i]
+
+print(generation[0].knapsack)
+generation[0].mutation(muteRate)
+print(generation[0].knapsack)
 

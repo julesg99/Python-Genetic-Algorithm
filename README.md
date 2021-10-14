@@ -1,3 +1,3 @@
-# CS 461 - Intro to Artificial Intelligence
-## Program 2 - Genetic Algorithms
-## Ben Garver - Fall 2021
+### Program 2 - Genetic Algorithms
+CS 461 - Intro to Artificial Intelligence
+Ben Garver - Fall 2021

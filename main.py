@@ -26,6 +26,7 @@ class Solution:
         count = 0
         while self.weight <= 500 or count < 20:
             temp = np.random.randint(0, 400) # generate a random index
+            if (self.weight + weights[temp]) > 500: break
             self.knapsack[temp] = 1 # declare random index as a piece of gear to be taken
             self.weight += weights[temp]
             self.totalUtil += utilities[temp]
@@ -39,13 +40,18 @@ class Solution:
         self.knapsack = inp[0]
         self.totalUtil = 0
         self.weight = 0
-        for i in range(len(self.knapsack)):
-            self.totalUtil += utilities[i]
-            self.weight += weights[i]
-            self.avgUtil += utilities[i]
+        for i in self.knapsack:
+            if i == 1:
+                self.totalUtil += utilities[i]
+                self.weight += weights[i]
+                self.avgUtil += utilities[i]
         self.totalUtil = round(self.totalUtil, 2)
         self.weight = round(self.weight, 2)
+        if self.weight > 500:
+            self.totalUtil = 1
+            self.avgUtil = 1
         self.avgUtil = round(self.avgUtil / len(self.knapsack), 2)
+        print("totalUtil = {}  weight = {}".format(self.totalUtil, self.weight))
 
     def getAverage(self):
         self.avgUtil = 0
@@ -84,15 +90,6 @@ def printNormal(generation: list):
     print()
 
 
-# finds the cumulative normal value for all elements in a generation
-def getCumNorm(generation: list):
-    for i in generation:
-        for j in generation:
-            if i == j: break
-            else: i.cumNorm += j.normal
-        i.cumNorm = round(i.cumNorm, 5)
-
-
 # applying L2 normalization to the average utilities of a generation
 def normalize(generation: list):
     squaredSum = 0
@@ -102,6 +99,15 @@ def normalize(generation: list):
     for i in generation:
         temp = np.square(i.avgUtil) / squaredSum
         i.normal = round(temp, 5)
+
+
+# finds the cumulative normal value for all elements in a generation
+def getCumNorm(generation: list):
+    for i in generation:
+        for j in generation:
+            if i == j: break
+            else: i.cumNorm += j.normal
+        i.cumNorm = round(i.cumNorm, 5)
 
 
 # applies roulette wheel selection by comparing the cumulative normal value to a random value
@@ -123,12 +129,15 @@ def crossover(generation: list):
         split = np.random.randint(0, 400)
         # creating child one
         temp1, temp2 = generation[mama].knapsack[:split], generation[papa].knapsack[split:]
-        child = np.concatenate([temp1, temp2])
-        generation.append(Solution(child))
+        child = Solution(np.concatenate([temp1, temp2]))
+        if child.weight < 500:
+            generation.append(child)
+
         # creating child two
         temp1, temp2 = generation[mama].knapsack[split:], generation[papa].knapsack[:split]
-        child = np.concatenate([temp1, temp2])
-        generation.append(Solution(child))
+        child = Solution(np.concatenate([temp1, temp2]))
+        if child.weight < 500:
+            generation.append(child)
 
 
 # Global Variables
@@ -153,16 +162,25 @@ currentGen = list()
 for i in range(genSize):
     currentGen.append(Solution())
 
+print("Gen Weights = ", end="")
+for i in currentGen:
+    print(i.weight, end=", ")
+print()
+
 print("Pre-Selection: ", end="")
 printGenUtil(currentGen)
+print()
+
 normalize(currentGen)
 getCumNorm(currentGen)
 newGen = selection(currentGen)
 print("Post-Selection: ", end="")
 printGenUtil(newGen)
+print()
+
 crossover(newGen)
 print("Post-Crossover: ", end="")
 printGenUtil(newGen)
-print(len(newGen))
+
 
 

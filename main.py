@@ -1,158 +1,168 @@
-import numpy
-import random
+import numpy as np
 
 
-# function for sorting a generation based on utility score
+##### CLASS AND METHODS #####
+class Solution:
+
+    def __init__(self, *inp):
+
+        #declaring instance variables
+        self.knapsack = np.zeros(400, dtype=int)
+        self.totalUtil = float()
+        self.avgUtil = float()
+        self.weight = float()
+        self.normal = float()
+        self.cumNorm = float()
+
+        if len(inp) == 0:
+            self.constructZero()
+
+        elif len(inp) == 1:
+            self.constructOne(inp)
+
+    def constructZero(self):
+        self.totalUtil = 0
+        self.weight = 0
+        count = 0
+        while self.weight <= 500 or count < 20:
+            temp = np.random.randint(0, 400) # generate a random index
+            self.knapsack[temp] = 1 # declare random index as a piece of gear to be taken
+            self.weight += weights[temp]
+            self.totalUtil += utilities[temp]
+            self.avgUtil += weights[temp]
+            count += 1
+        self.totalUtil = round(self.totalUtil, 2)
+        self.weight = round(self.weight, 2)
+        self.avgUtil = round(self.avgUtil/len(self.knapsack), 2)
+
+    def constructOne(self, inp):
+        self.knapsack = inp[0]
+        self.totalUtil = 0
+        self.weight = 0
+        for i in range(len(self.knapsack)):
+            self.totalUtil += utilities[i]
+            self.weight += weights[i]
+            self.avgUtil += utilities[i]
+        self.totalUtil = round(self.totalUtil, 2)
+        self.weight = round(self.weight, 2)
+        self.avgUtil = round(self.avgUtil / len(self.knapsack), 2)
+
+    def getAverage(self):
+        self.avgUtil = 0
+        for i in range(len(self.knapsack)):
+            self.avgUtil += weights[i]
+        self.avgUtil /= len(self.knapsack)
+        return self.avgUtil
+
+##### FUNCTIONS #####
+
+
+# function for sorting a generation based on TOTAL utility score
 def selectSort(generation: list):
-    for i in range(popSize):
+    for i in range(len(generation)):
         index = i
-        for j in range(i + 1, popSize):
-            if generation[index].utility > generation[j].utility:
+        for j in range(i + 1, len(generation)):
+            if generation[index].totalUtil > generation[j].totalUtil:
                 index = j
 
         generation[i], generation[index] = generation[index], generation[i]
 
-    # function decides which solutions of the previous generation will create the next generation
-    # currently it takes the better half of generation, based on utility
-def selection(generation: list):
-    selectSort(generation)
-    index = len(generation)//2
-    if index % 2 == 1:
-        index += 1
-    generation = generation[index:]
-    return generation
 
-    # prints out a list of all utilities in a generation
+# prints out all totalUtil values for a generation
 def printGenUtil(generation: list):
+    selectSort(generation)
     for i in range(len(generation)):
-        print(generation[i].utility, end=", ")
+        print(generation[i].totalUtil, end=", ")
     print()
 
-# function performs L2 normalization (squared) on utility values of a generation
+
+# prints out all normal values for a generation
+def printNormal(generation: list):
+    selectSort(generation)
+    for i in generation:
+        print(i.normal, end=", ")
+    print()
+
+
+# finds the cumulative normal value for all elements in a generation
+def getCumNorm(generation: list):
+    for i in generation:
+        for j in generation:
+            if i == j: break
+            else: i.cumNorm += j.normal
+        i.cumNorm = round(i.cumNorm, 5)
+
+
+# applying L2 normalization to the average utilities of a generation
 def normalize(generation: list):
-    squaredSum = 0 # the sum of squared utility
-    for i in range(len(generation)):
-        squaredSum += numpy.square(generation[i].utility)
+    squaredSum = 0
+    for i in generation:
+        squaredSum += np.square(i.avgUtil)
 
-    for i in range(len(generation)):
-        generation[i].normal = numpy.square(generation[i].utility) / squaredSum
-
-
-def getAverage(generation: list):
-    average = 0
-    for i in range(len(generation)):
-        average += generation[i].utility
-    average /= len(generation)
-    return average
-
-class Solution:
-
-    # attempting to implement constructors for specific arguments
-    # constructor for creating a random solution
-    def __init__(self, *inp):
-        # declaring instance variables
-        self.knapsack = list()
-        self.utility = 0
-        self.weight = 0
-        self.normal = 0
-
-        # execute constructor function if one argument is given
-        if len(inp) == 1:
-            self.constructor(inp)
-
-        # execute crossover function if two arguments are given
-        elif len(inp) == 2:
-            self.crossover(inp)
-
-    # default construction, when a random solution is needed
-    # argument is list of gear
-    def constructor(self, args):
-        while self.weight < 200 or len(self.knapsack) < 20:
-            temp = gear[numpy.random.randint(0, 400)]
-            self.knapsack.append(temp)
-            self.weight += temp[1]
-            self.utility += temp[0]
-
-        # rounding for readability
-        self.utility, self.weight = round(self.utility, 2), round(self.weight, 2)
-        # print("solution = ", self.knapsack, "\nlength = ", len(self.knapsack), "\ntotal weight = ", self.totalWeig, "\ntotal utility = ", self.totalUtil, "\n")
-
-    # method creates a new solution by randomly splicing two parents together
-    # constructor for creating a new solution by randomly splicing two parents, this is where CROSSOVER takes place
-    # argument is two knapsack lists, not whole solutions, one mama and one papa
-    def crossover(self, args):
-        split = random.randint(0, len(args[0]))
-        self.knapsack = args[0][:split] + args[1][split:]
-        # test
-        print("mama = ", args[0], "\npapa = ", args[1], "\nsplit = ", split, "\nchild = ", self.knapsack)
-        self.mutation(muteRate)
-
-    def mutation(self, muteRate):
-        # if a randomly generated value is less than the given mutation rate (0.0001) then a mutation *should* occur
-        # each element in the list has an independent chance of mutation
-        for i in range(len(self.knapsack)):
-            if numpy.random.random() < muteRate:
-                # print("true at {}".format(i), "\tvalue before =", self.knapsack[i])
-                self.knapsack[i][1] = round(random.uniform(0.0, 25.0), 3)
-                # print("value after =", self.knapsack[i])
-                # print("child = ", self.knapsack)
-
-    def getTotalWeight(self):
-        for i in range(len(self.knapsack)):
-            self.weight += self.knapsack[1]
-        return self.weight
-
-    def getTotalUtility(self):
-        for i in range(len(self.knapsack)):
-            self.utility += self.knapsack[0]
-        return self.utility
+    for i in generation:
+        temp = np.square(i.avgUtil) / squaredSum
+        i.normal = round(temp, 5)
 
 
-##### MAIN #####
-# number of combinations (spec = 1000)
-popSize = 1000
-# likelihood of a mutation happening (spec = 0.0001)
+# applies roulette wheel selection by comparing the cumulative normal value to a random value
+def selection(generation: list):
+    newGen = list()
+    for i in generation:
+        checkVal = np.random.rand()
+        if checkVal < i.cumNorm:
+            newGen.append(i)
+
+    return newGen
+
+
+# applying crossover to solutions that remain after selection to repopulate generation
+def crossover(generation: list):
+    while len(generation) < genSize:
+        # generate a random mother, father, and split value
+        papa, mama = np.random.randint(0, len(generation)), np.random.randint(0, len(generation))
+        split = np.random.randint(0, 400)
+        # creating child one
+        temp1, temp2 = generation[mama].knapsack[:split], generation[papa].knapsack[split:]
+        child = np.concatenate([temp1, temp2])
+        generation.append(Solution(child))
+        # creating child two
+        temp1, temp2 = generation[mama].knapsack[split:], generation[papa].knapsack[:split]
+        child = np.concatenate([temp1, temp2])
+        generation.append(Solution(child))
+
+
+# Global Variables
+genSize = 1000
 muteRate = 0.0001
+numberOfGens = 100
 
-# list of all possible items (utility, weight)
-gear = []
+# utilities, weights, and knapsacks are linked via index
+utilities = list() # list of all utilities
+weights = list()    # list of all weights
 
-# read in all values and convert to float
+
+# reading in all values, convert to float, and store in specified list
 with open('Program2Input.txt', 'r') as file:
-    count = 0
     for i in file:
-        gear.append(i.split())
-        gear[count][0], gear[count][1] = float(gear[count][0]), float(gear[count][1])
-        count += 1
+        temp = i.split() # (utility, weight)
+        utilities.append(float(temp[0]))
+        weights.append(float(temp[1]))
 
+# creating a initial population of 1000 random solutions
+currentGen = list()
+for i in range(genSize):
+    currentGen.append(Solution())
 
-# creating a number(popSize) of combinations and putting them in generation list
-generation = list()
-for i in range(popSize):
-    generation.append(Solution(gear))
-
-
-
-##### Testing #####
-
-printGenUtil(generation)
-generation = selection(generation)
-printGenUtil(generation)
-
-#print(getAverage(generation))
-
-
-
-#
-# generation = selection(generation)
-# needed = popSize - len(generation)
-# for i in range(needed):
-#     mama = random.randint(0, len(generation))
-#     papa = random.randint(0, len(generation))
-#     generation.append(Solution(generation[mama], generation[papa]))
-#
-
-
-
+print("Pre-Selection: ", end="")
+printGenUtil(currentGen)
+normalize(currentGen)
+getCumNorm(currentGen)
+newGen = selection(currentGen)
+print("Post-Selection: ", end="")
+printGenUtil(newGen)
+crossover(newGen)
+print("Post-Crossover: ", end="")
+printGenUtil(newGen)
+print(len(newGen))
 
 

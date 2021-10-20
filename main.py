@@ -1,6 +1,5 @@
 import numpy as np
 
-#### TESTING TESTING TESTING TESTING ####
 
 # Global Variables
 genSize = 1000
@@ -18,7 +17,7 @@ class Solution:
 
     def __init__(self, *inp):
 
-        #declaring instance variables
+        # declaring instance variables
         self.knapsack = np.zeros(400, dtype=bool)
         self.totalUtil = float()
         self.weight = float()
@@ -70,13 +69,6 @@ class Solution:
                 # print("index: {} value: {}".format(i, self.knapsack[i]))
                 self.knapsack[i] = ~self.knapsack[i]
 
-
-    # def getSolutionAve(self):
-    #     self.avgUtil = 0
-    #     for i in range(len(self.knapsack)):
-    #         self.avgUtil += weights[i]
-    #     self.avgUtil /= len(self.knapsack)
-    #     return self.avgUtil
 
 ##### FUNCTIONS #####
 # function for sorting a generation based on TOTAL utility score
@@ -157,22 +149,22 @@ def selection(generation: list):
 
 # applying crossover to solutions that remain after selection to repopulate generation
 def crossover(generation: list):
+    index = len(generation)-1
     while len(generation) < genSize:
-        # generate a random mother, father, and split value
-        papa, mama = np.random.randint(0, len(generation)), np.random.randint(0, len(generation))
+        mama = generation[index]
+        papa = generation[index-2]
         split = np.random.randint(0, 400)
+        child1 = Solution(np.concatenate([mama.knapsack[:split], papa.knapsack[split:]]))
+        child1.mutation()
+        if child1.weight < 500: generation.append(child1)
 
-        # creating child one
-        temp1, temp2 = generation[mama].knapsack[:split], generation[papa].knapsack[split:]
-        child = Solution(np.concatenate([temp1, temp2]))
-        child.mutation()
-        if child.weight < 500: generation.append(child)
+        child2 = Solution(np.concatenate([mama.knapsack[split:], papa.knapsack[:split]]))
+        child2.mutation()
+        if child2.weight < 500: generation.append(child2)
 
-        # creating child two
-        temp1, temp2 = generation[mama].knapsack[split:], generation[papa].knapsack[:split]
-        child = Solution(np.concatenate([temp1, temp2]))
-        child.mutation()
-        if child.weight < 500: generation.append(child)
+        index -= 2
+        if index < 10:
+            index = len(generation)-1
 
 
 if __name__ == "__main__":
@@ -184,12 +176,12 @@ if __name__ == "__main__":
             weights.append(float(temp[1]))
 
     maxUtility = Solution()
+    aveGenUtilities = list()
 
     # creating a initial population of 1000 random solutions
     currentGen = list()
     for i in range(genSize):
         currentGen.append(Solution())
-
 
     for i in range(numberOfGens):
         selectSort(currentGen)
@@ -198,34 +190,13 @@ if __name__ == "__main__":
         newGen = selection(currentGen)
         crossover(newGen)
         aveUtility = getUtilities(newGen)
+        aveGenUtilities.append(aveUtility)
+        ### outputs for testing ###
         # print("gen {}: maxUtility = {}\t\taveUtility = {}\t\tweight = {}".format(i, maxUtility.totalUtil, aveUtility, getAveWeight(newGen)))
-        print("gen {}: maxUtility = {} :\t".format(i, maxUtility.totalUtil), end="")
-        printGenUtil(newGen)
+        print("gen {}: maxUtility = {} :\t".format(i, maxUtility.totalUtil), end=""), printGenUtil(newGen)
+        # print("gen {}: aveUtility = {} length = {}".format(i, aveUtility, len(newGen)))
+
         currentGen = newGen
         newGen = None
 
-    # ##### TEST CODE #####
-    # print("Gen Weights = ", end="")
-    # for i in currentGen:
-    #     print(i.weight, end=", ")
-    # print('\n')
-    #
-    # print("Pre-Selection: ", end="")
-    # printGenUtil(currentGen)
-    # print()
-    #
-    # normalize(currentGen)
-    # getCumNorm(currentGen)
-    # newGen = selection(currentGen)
-    # print("Post-Selection: ", end="")
-    # printGenUtil(newGen)
-    # print()
-    #
-    # crossover(newGen)
-    # print("Post-Crossover: ", end="")
-    # printGenUtil(newGen)
-    #
-    # temp1 = newGen[1].knapsack
-    # newGen[1].mutation()
-    # temp2 = newGen[1].knapsack
-    # print(np.array_equal(temp1, temp2))
+

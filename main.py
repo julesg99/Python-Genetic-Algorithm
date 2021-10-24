@@ -1,27 +1,24 @@
 import numpy as np
 
-# Global Variables
-genSize = 1000
+genSize = 500
 muteRate = 0.0001
-numberOfGens = 100
-maxUtility = None
+numberOfGens = 5000
+itemsPerSolution = 20
 
-# utilities, weights, and knapsacks are linked via index
-utilities = list() # list of all utilities
-weights = list()    # list of all weights
+weights = list()
+utilities = list()
 
 
-##### CLASS AND METHODS #####
+##### CLASS #####
+# holds all information for each individual solution to the knapsack problem
 class Solution:
 
+    # init method holds instance variables and calls to two constructors based on given arguments
     def __init__(self, *inp):
-
-        #declaring instance variables
         self.knapsack = np.zeros(400, dtype=bool)
-        self.totalUtil = float()
         self.weight = float()
+        self.utility = float()
         self.normal = float()
-        self.cumNorm = float()
 
         if len(inp) == 0:
             self.constructZero()
@@ -29,201 +26,134 @@ class Solution:
         elif len(inp) == 1:
             self.constructOne(inp)
 
-    # builds a solution with no starting information
+    # constructor builds a random solution (mostly used for builidng initial generation)
     def constructZero(self):
-        global weights
-        self.totalUtil = 0
-        self.weight = 0
-        count = 0
-        while self.weight < 500 or count < 20: # or self.weight < 500
-            temp = np.random.randint(0, 400) # generate a random index
-            # if (self.weight + weights[temp]) > 500: break # keeps any solution in initial generation from being over 500lbs
-            self.knapsack[temp] = 1 # declare random index as a piece of gear to be taken
-            self.weight += weights[temp]
-            self.totalUtil += utilities[temp]
-            count += 1
-        self.totalUtil = round(self.totalUtil, 2)
+        self.weight = self.utility = 0
+        for i in range(itemsPerSolution):
+            item = np.random.randint(400)
+            self.knapsack[item] = 1
+            self.weight += weights[item]
+            self.utility += utilities[item]
         self.weight = round(self.weight, 2)
+        self.utility = round(self.utility, 2)
 
-    # builds a solution based on given knapsack
+    # constructor builds a solution based on given knapsack
     def constructOne(self, inp):
+        self.weight = self.utility = 0
         self.knapsack = inp[0]
-        self.totalUtil = 0
-        self.weight = 0
-        for i in self.knapsack:
-            if i == 1:
-                self.totalUtil += utilities[i]
+        for i in range(len(self.knapsack)):
+            if self.knapsack[i]:
                 self.weight += weights[i]
-        self.totalUtil = round(self.totalUtil, 2)
+                self.utility += utilities[i]
         self.weight = round(self.weight, 2)
-        if self.weight > 500:
-            self.totalUtil = 1
-            # self.avgUtil = 1
-        # else: print("totalUtil = {}  weight = {}".format(self.totalUtil, self.weight))
+        self.utility = round(self.utility, 2)
 
-    # applys mutation to a solutions knapsack
+        if self.weight > 500:
+            self.utility = 1
+
+    # applies a 1/1000 chance of any bit in the knapsack being flipped
     def mutation(self):
         for i in range(len(self.knapsack)):
-            if np.random.rand() < muteRate:
-                # print("index: {} value: {}".format(i, self.knapsack[i]))
+            check = np.random.rand()
+            if check < muteRate:
                 self.knapsack[i] = ~self.knapsack[i]
 
 
-    # def getSolutionAve(self):
-    #     self.avgUtil = 0
-    #     for i in range(len(self.knapsack)):
-    #         self.avgUtil += weights[i]
-    #     self.avgUtil /= len(self.knapsack)
-    #     return self.avgUtil
-
 ##### FUNCTIONS #####
-# function for sorting a generation based on TOTAL utility score
-def selectSort(generation: list):
-    for i in range(len(generation)):
-        index = i
-        for j in range(i + 1, len(generation)):
-            if generation[index].totalUtil > generation[j].totalUtil:
-                index = j
-
-        generation[i], generation[index] = generation[index], generation[i]
-
-
-# prints out all avgUtil values for a generation
-def printGenUtil(generation: list):
-    selectSort(generation)
-    for i in range(len(generation)):
-        print(generation[i].totalUtil, end=", ")
-    print()
-
-
-# prints out all normal values for a generation
-def printNormal(generation: list):
-    selectSort(generation)
-    for i in generation:
-        print(i.normal, end=", ")
-    print()
-
-
-# applying L2 normalization to the average utilities of a generation
 def normalize(generation: list):
     squaredSum = 0
     for i in generation:
-        squaredSum += np.square(i.totalUtil)
+        squaredSum += np.square(i.utility)
 
     for i in generation:
-        temp = np.square(i.totalUtil) / squaredSum
-        i.normal = round(temp, 5)
+        i.normal = np.square(i.utility) / squaredSum
 
 
-# finds the cumulative normal value for all elements in a generation
-def getCumNorm(generation: list):
-    for i in generation:
-        for j in generation:
-            if i == j: break
-            else: i.cumNorm += j.normal
-        i.cumNorm = round(i.cumNorm, 5)
-
-
-# finds the average utility score of a generation and finds max Solution Fitness in a generation
-def getUtilities(generation: list):
-    global maxUtility
-    average = 0
-    for i in generation:
-        average += i.totalUtil
-        if i.totalUtil > maxUtility.totalUtil: maxUtility = i
-    return round(average/len(generation), 3)
-
-
-# finds the average weight of all solutions in a generation
-def getAveWeight(generation: list):
-    average = 0
-    for i in generation:
-        average += i.weight
-    return round(average/len(generation), 3)
-
-
-# applies roulette wheel selection by comparing the cumulative normal value to a random value
+# basic roulette selection
 def selection(generation: list):
-    newGen = list()
+    sum = 0
+    check = np.random.rand()
+
+    for i in range(len(generation)):
+        sum += generation[i].normal
+        if sum < check < (sum + generation[i+1].normal):
+            return i+1
+
+
+# applies crossover to two parents, creates two children
+def crossover(mama: Solution, papa: Solution):
+    split = np.random.randint(0, 400)
+    child1 = Solution(np.concatenate([mama.knapsack[:split], papa.knapsack[split:]]))
+    child2 = Solution(np.concatenate([papa.knapsack[:split], mama.knapsack[split:]]))
+
+    return child1, child2
+
+
+# print out all utilities in given generation
+def printGenUtil(generation: list):
     for i in generation:
-        checkVal = np.random.rand()
-        if checkVal < i.cumNorm:
-            newGen.append(i)
-
-    return newGen
+        print(i.utility, end=', ')
+    print()
 
 
-# applying crossover to solutions that remain after selection to repopulate generation
-def crossover(generation: list):
-    while len(generation) < genSize:
-        # generate a random mother, father, and split value
-        papa, mama = np.random.randint(0, len(generation)), np.random.randint(0, len(generation))
-        split = np.random.randint(0, 400)
-
-        # creating child one
-        temp1, temp2 = generation[mama].knapsack[:split], generation[papa].knapsack[split:]
-        child = Solution(np.concatenate([temp1, temp2]))
-        child.mutation()
-        if child.weight < 500: generation.append(child)
-
-        # creating child two
-        temp1, temp2 = generation[mama].knapsack[split:], generation[papa].knapsack[:split]
-        child = Solution(np.concatenate([temp1, temp2]))
-        child.mutation()
-        if child.weight < 500: generation.append(child)
+# print out all weights in given generation
+def printGenWeight(generation: list):
+    for i in generation:
+        print(i.weight, end=', ')
+    print()
 
 
+# returns the average utility of a generation
+def getGenUtilAve(generation: list):
+    sum = 0
+    for i in generation:
+        sum += i.utility
+
+    return round(sum / len(generation), 3)
+
+
+##### MAIN #####
 if __name__ == "__main__":
-    # reading in all values, convert to float, and store in specified list
-    with open('Program2Input.txt', 'r') as file:
+    # read in all values from file, store in specified list
+    with open("Program2Input.txt", 'r') as file:
         for i in file:
-            temp = i.split() # (utility, weight)
+            temp = i.split()
             utilities.append(float(temp[0]))
             weights.append(float(temp[1]))
 
-    maxUtility = Solution()
-
-    # creating a initial population of 1000 random solutions
     currentGen = list()
     for i in range(genSize):
-        currentGen.append(Solution())
+        z = Solution()
+        z.mutation()
+        currentGen.append(z)
 
-
+    maxUtility = Solution()
     for i in range(numberOfGens):
-        selectSort(currentGen)
-        normalize(currentGen)
-        getCumNorm(currentGen)
-        newGen = selection(currentGen)
-        crossover(newGen)
-        aveUtility = getUtilities(newGen)
-        # print("gen {}: maxUtility = {}\t\taveUtility = {}\t\tweight = {}".format(i, maxUtility.totalUtil, aveUtility, getAveWeight(newGen)))
-        print("gen {}: maxUtility = {} :\t".format(i, maxUtility.totalUtil), end="")
-        printGenUtil(newGen)
-        currentGen = newGen
-        newGen = None
 
-    # ##### TEST CODE #####
-    # print("Gen Weights = ", end="")
-    # for i in currentGen:
-    #     print(i.weight, end=", ")
-    # print('\n')
-    #
-    # print("Pre-Selection: ", end="")
-    # printGenUtil(currentGen)
-    # print()
-    #
-    # normalize(currentGen)
-    # getCumNorm(currentGen)
-    # newGen = selection(currentGen)
-    # print("Post-Selection: ", end="")
-    # printGenUtil(newGen)
-    # print()
-    #
-    # crossover(newGen)
-    # print("Post-Crossover: ", end="")
-    # printGenUtil(newGen)
-    #
-    # temp1 = newGen[1].knapsack
-    # newGen[1].mutation()
-    # temp2 = newGen[1].knapsack
-    # print(np.array_equal(temp1, temp2))
+        currentGen.sort(key=lambda u: u.utility)
+        newGen = list()
+        normalize(currentGen)
+
+        while len(newGen) < genSize:
+            mamaInd = selection(currentGen)
+            papaInd = selection(currentGen)
+            # restarts loop if mama index or papa index is not assigned to a value
+            if type(mamaInd) != int or type(papaInd) != int: continue
+
+            mama, papa = currentGen[mamaInd], currentGen[papaInd]
+            child1, child2 = crossover(mama, papa)
+            mama.mutation(), papa.mutation(), child2.mutation(), child1.mutation()
+
+            if mama.utility > maxUtility.utility: maxUtility = mama
+            if papa.utility > maxUtility.utility: maxUtility = papa
+            if child1.utility > maxUtility.utility: maxUtility = child1
+            if child2.utility > maxUtility.utility: maxUtility = child2
+
+            newGen.append(mama), newGen.append(papa)
+            newGen.append(child2), newGen.append(child1)
+
+        currentGen.sort(key= lambda u: u.utility)
+        print("Gen {}: maxUtil = {} aveUtil = {}".format(i, maxUtility.utility, getGenUtilAve(currentGen)), end=""), printGenUtil(currentGen)
+        # print("Gen {}: average utility: ".format(i), end=""), printGenUtilAve(newGen)
+        currentGen = newGen
+

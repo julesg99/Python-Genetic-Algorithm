@@ -1,6 +1,6 @@
 import numpy as np
 
-genSize = 10000
+genSize = 500
 muteRate = 0.0001
 numberOfGens = 5000
 itemsPerSolution = 20
@@ -109,7 +109,7 @@ def getGenUtilAve(generation: list):
     for i in generation:
         sum += i.utility
 
-    return round(sum / len(generation), 3)
+    return sum / len(generation)
 
 
 ##### MAIN #####
@@ -128,6 +128,7 @@ if __name__ == "__main__":
         z.mutation()
         currentGen.append(z)
 
+    aveUtility = list()
     maxUtility = Solution()
     for i in range(numberOfGens):
 
@@ -135,7 +136,7 @@ if __name__ == "__main__":
         normalize(currentGen)
 
         newGen = list()
-        while len(newGen) < (genSize // 4):
+        while len(newGen) < genSize:
             mamaInd = selection(currentGen)
             papaInd = selection(currentGen)
             # restarts loop if mama index or papa index is not assigned to a value
@@ -157,11 +158,20 @@ if __name__ == "__main__":
             newGen.append(mama), newGen.append(papa)
             newGen.append(child2), newGen.append(child1)
 
+        # checking to see if average utility changes more than 0.01 in ten generations
+        # aveUtility.append(getGenUtilAve(newGen))
+        # if len(aveUtility) % 10 == 0:
+        #     index = len(aveUtility)-1
+        #     check = aveUtility[index-10] / aveUtility[index]
+        #     print(check)
+        #     if check > 0.99: break
 
         newGen.sort(key= lambda u: u.utility)
-        file.write("Gen {}:    maxUtil = {}    aveUtil = {}\n".format(i+1, maxUtility.utility, getGenUtilAve(newGen)))
-        print("Gen {}: maxUtil = {} aveUtil = {}".format(i, maxUtility.utility, getGenUtilAve(newGen)))
-        # print("Gen {}: maxUtil = {} aveUtil = {}".format(i, maxUtility.utility, getGenUtilAve(newGen)), end=""), printGenUtil(newGen)
-        # print("Gen {}: average utility: ".format(i), end=""), printGenUtilAve(newGen)
         currentGen = newGen
+
+        file.write("Gen {}:    aveUtil = {}\n".format(i+1, getGenUtilAve(newGen)))
+        print("Gen {}:    aveUtil = {}".format(i, maxUtility.utility, getGenUtilAve(newGen)))
+
+    print("max Utility = {}, weight = {}".format(maxUtility.utility, maxUtility.weight))
+    file.write("max Utility = {}, weight = {}".format(maxUtility.utility, maxUtility.weight))
 

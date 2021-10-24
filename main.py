@@ -2,7 +2,7 @@ import numpy as np
 
 genSize = 500
 muteRate = 0.0001
-numberOfGens = 5000
+numberOfGens = 500
 itemsPerSolution = 20
 
 weights = list()
@@ -109,7 +109,7 @@ def getGenUtilAve(generation: list):
     for i in generation:
         sum += i.utility
 
-    return sum / len(generation)
+    return round(sum / len(generation), 3)
 
 
 ##### MAIN #####
@@ -169,9 +169,14 @@ if __name__ == "__main__":
         newGen.sort(key= lambda u: u.utility)
         currentGen = newGen
 
+        file.write("Gen {}:   aveUtil = {}\n".format(i+1, getGenUtilAve(newGen)))
+        print("Gen {}:    aveUtil = {}".format(i, getGenUtilAve(newGen)))
+
         file.write("Gen {}:    aveUtil = {}\n".format(i+1, getGenUtilAve(newGen)))
-        print("Gen {}:    aveUtil = {}".format(i, maxUtility.utility, getGenUtilAve(newGen)))
+        print("Gen {}:    aveUtil = {}".format(i, getGenUtilAve(newGen)))
 
     print("max Utility = {}, weight = {}".format(maxUtility.utility, maxUtility.weight))
+    print("max Utility knapsack : ", maxUtility.knapsack)
     file.write("max Utility = {}, weight = {}".format(maxUtility.utility, maxUtility.weight))
+    file.write("max Utility knapsack :\n{}".format(maxUtility.knapsack))
 

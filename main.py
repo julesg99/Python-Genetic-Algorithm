@@ -1,6 +1,6 @@
 import numpy as np
 
-genSize = 500
+genSize = 10000
 muteRate = 0.0001
 numberOfGens = 5000
 itemsPerSolution = 20
@@ -120,6 +120,7 @@ if __name__ == "__main__":
             temp = i.split()
             utilities.append(float(temp[0]))
             weights.append(float(temp[1]))
+    file = open("AverageOutput.txt", 'w')
 
     currentGen = list()
     for i in range(genSize):
@@ -131,17 +132,21 @@ if __name__ == "__main__":
     for i in range(numberOfGens):
 
         currentGen.sort(key=lambda u: u.utility)
-        newGen = list()
         normalize(currentGen)
 
-        while len(newGen) < genSize:
+        newGen = list()
+        while len(newGen) < (genSize // 4):
             mamaInd = selection(currentGen)
             papaInd = selection(currentGen)
             # restarts loop if mama index or papa index is not assigned to a value
             if type(mamaInd) != int or type(papaInd) != int: continue
 
             mama, papa = currentGen[mamaInd], currentGen[papaInd]
-            child1, child2 = crossover(mama, papa)
+
+            split = np.random.randint(0, 400)
+            child1 = Solution(np.concatenate([mama.knapsack[:split], papa.knapsack[split:]]))
+            child2 = Solution(np.concatenate([papa.knapsack[:split], mama.knapsack[split:]]))
+
             mama.mutation(), papa.mutation(), child2.mutation(), child1.mutation()
 
             if mama.utility > maxUtility.utility: maxUtility = mama
@@ -152,8 +157,11 @@ if __name__ == "__main__":
             newGen.append(mama), newGen.append(papa)
             newGen.append(child2), newGen.append(child1)
 
-        currentGen.sort(key= lambda u: u.utility)
-        print("Gen {}: maxUtil = {} aveUtil = {}".format(i, maxUtility.utility, getGenUtilAve(currentGen)), end=""), printGenUtil(currentGen)
+
+        newGen.sort(key= lambda u: u.utility)
+        file.write("Gen {}:    maxUtil = {}    aveUtil = {}\n".format(i+1, maxUtility.utility, getGenUtilAve(newGen)))
+        print("Gen {}: maxUtil = {} aveUtil = {}".format(i, maxUtility.utility, getGenUtilAve(newGen)))
+        # print("Gen {}: maxUtil = {} aveUtil = {}".format(i, maxUtility.utility, getGenUtilAve(newGen)), end=""), printGenUtil(newGen)
         # print("Gen {}: average utility: ".format(i), end=""), printGenUtilAve(newGen)
         currentGen = newGen
 

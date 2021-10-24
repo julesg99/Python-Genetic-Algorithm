@@ -1,8 +1,8 @@
 import numpy as np
 
-genSize = 500
+genSize = 5000
 muteRate = 0.0001
-numberOfGens = 500
+numberOfGens = 5000
 itemsPerSolution = 20
 
 weights = list()
@@ -172,11 +172,8 @@ if __name__ == "__main__":
         file.write("Gen {}:   aveUtil = {}\n".format(i+1, getGenUtilAve(newGen)))
         print("Gen {}:    aveUtil = {}".format(i, getGenUtilAve(newGen)))
 
-        file.write("Gen {}:    aveUtil = {}\n".format(i+1, getGenUtilAve(newGen)))
-        print("Gen {}:    aveUtil = {}".format(i, getGenUtilAve(newGen)))
-
     print("max Utility = {}, weight = {}".format(maxUtility.utility, maxUtility.weight))
     print("max Utility knapsack : ", maxUtility.knapsack)
     file.write("max Utility = {}, weight = {}".format(maxUtility.utility, maxUtility.weight))
-    file.write("max Utility knapsack :\n{}".format(maxUtility.knapsack))
+    file.write("max Utility knapsack :{}".format(maxUtility.knapsack))
 

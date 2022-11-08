@@ -1,6 +1,6 @@
 import numpy as np
 
-genSize = 5000
+genSize = 1000
 muteRate = 0.0001
 numberOfGens = 5000
 itemsPerSolution = 20
@@ -81,7 +81,7 @@ def selection(generation: list):
 
 
 # applies crossover to two parents, creates two children
-def crossover(mama: Solution, papa: Solution):
+def crossover(mama: Solution, papa: Solution) -> [Solution, Solution]:
     split = np.random.randint(0, 400)
     child1 = Solution(np.concatenate([mama.knapsack[:split], papa.knapsack[split:]]))
     child2 = Solution(np.concatenate([papa.knapsack[:split], mama.knapsack[split:]]))
@@ -120,7 +120,7 @@ if __name__ == "__main__":
             temp = i.split()
             utilities.append(float(temp[0]))
             weights.append(float(temp[1]))
-    file = open("AverageOutput.txt", 'w')
+    file = open("output.txt", 'w')
 
     currentGen = list()
     for i in range(genSize):
@@ -144,9 +144,7 @@ if __name__ == "__main__":
 
             mama, papa = currentGen[mamaInd], currentGen[papaInd]
 
-            split = np.random.randint(0, 400)
-            child1 = Solution(np.concatenate([mama.knapsack[:split], papa.knapsack[split:]]))
-            child2 = Solution(np.concatenate([papa.knapsack[:split], mama.knapsack[split:]]))
+            child1, child2 = crossover(mama, papa)
 
             mama.mutation(), papa.mutation(), child2.mutation(), child1.mutation()
 

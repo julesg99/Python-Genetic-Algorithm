@@ -115,7 +115,7 @@ def getGenUtilAve(generation: list):
 ##### MAIN #####
 if __name__ == "__main__":
     # read in all values from file, store in specified list
-    with open("Program2Input.txt", 'r') as file:
+    with open("input.txt", 'r') as file:
         for i in file:
             temp = i.split()
             utilities.append(float(temp[0]))
